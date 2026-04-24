@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>灵感石碑 - 究极形态 v7.0</title>
+    <title>灵感石碑 - 究极形态 v7.0 (Final Fix)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Firebase SDK -->
@@ -18,7 +18,8 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         const storage = getStorage(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'inspiration-stone-v7';
+        // 强制使用 v7 ID 确保数据隔离和最新版本渲染
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'inspiration-stone-v7-final';
 
         window.fb = { db, auth, storage, appId, collection, addDoc, onSnapshot, query, orderBy, ref, uploadString, getDownloadURL };
         
@@ -43,13 +44,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;600&family=Noto+Sans+SC:wght@300;400;700&display=swap');
         body { background-color: #f8f8f6; color: #333; font-family: 'Noto Sans SC', sans-serif; overflow-x: hidden; }
         .serif { font-family: 'Noto Serif SC', serif; }
-        .masonry-grid { column-count: 1; column-gap: 1.5rem; }
-        @media (min-width: 768px) { .masonry-grid { column-count: 2; } }
+        .masonry-grid { column-gap: 1.5rem; display: block; }
+        @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
         @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
-        .stone-card { break-inside: avoid; margin-bottom: 1.5rem; background: white; border-radius: 2rem; border: 1px solid #eee; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .stone-card { break-inside: avoid; margin-bottom: 1.5rem; background: white; border-radius: 2rem; border: 1px solid #eee; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
         .stone-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
-        .drop-zone-active { border-color: #000; background: #fff; transform: scale(1.01); }
-        .color-dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+        .drop-zone-active { border-color: #000 !important; background: #fff !important; transform: scale(1.01); }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .jar-btn { animation: float 3s ease-in-out infinite; }
     </style>
@@ -60,7 +60,7 @@
         <header class="mb-12 flex justify-between items-end">
             <div>
                 <h1 class="text-4xl font-light text-stone-900 serif tracking-tighter">灵感石碑</h1>
-                <p class="text-[9px] text-stone-400 mt-2 uppercase tracking-[0.5em] font-bold">Inspiration Monolith / v7.0 Full Stack</p>
+                <p class="text-[9px] text-stone-400 mt-2 uppercase tracking-[0.5em] font-bold">Inspiration Monolith / v7.0 Stable</p>
             </div>
             <div class="flex gap-4">
                 <button id="shakeJar" class="jar-btn w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center hover:bg-amber-200 transition-colors shadow-sm" title="灵感随机碰撞">
@@ -74,14 +74,14 @@
 
         <!-- 采集入口 -->
         <div id="dropZone" class="group relative border-2 border-dashed border-stone-200 bg-white/50 rounded-[2.5rem] p-16 text-center transition-all cursor-pointer hover:bg-white hover:border-stone-400">
-            <input type="file" id="fileInput" class="hidden">
+            <input type="file" id="fileInput" class="hidden" accept="image/*">
             <div class="pointer-events-none space-y-4">
                 <div class="w-16 h-16 bg-stone-100 rounded-3xl mx-auto flex items-center justify-center group-hover:rotate-12 transition-transform">
-                    <i class="fa-solid fa-wand-magic-sparkles text-stone-400"></i>
+                    <i class="fa-solid fa-wand-magic-sparkles text-stone-400 text-xl"></i>
                 </div>
                 <div>
-                    <p class="text-xs font-black uppercase tracking-widest text-stone-600">在此拖入或粘贴外部图片</p>
-                    <p class="text-[10px] text-stone-300 mt-1 uppercase tracking-widest">Pinterest / X / Local Files</p>
+                    <p class="text-xs font-black uppercase tracking-widest text-stone-600">在此拖入 Pinterest / X 图片或点击上传</p>
+                    <p class="text-[9px] text-stone-300 mt-1 uppercase tracking-widest italic">支持多端自动同步 · AI 深度解析</p>
                 </div>
             </div>
         </div>
@@ -93,7 +93,7 @@
                     <img id="previewImg" class="w-full h-full object-contain">
                     <div id="loadingOverlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center hidden">
                         <div class="w-8 h-8 border-4 border-stone-900 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p class="text-[10px] font-black uppercase tracking-widest text-stone-500">正在剥离视觉维度...</p>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-stone-500">正在刻录视觉基因...</p>
                     </div>
                 </div>
                 <div class="w-full md:w-1/2 p-10 flex flex-col justify-between overflow-y-auto">
@@ -101,40 +101,36 @@
                         <!-- AI 结果注入 -->
                     </div>
                     <div class="flex gap-4 mt-8">
-                        <button id="saveBtn" class="flex-1 bg-stone-900 text-white text-[10px] font-black py-5 rounded-2xl hover:shadow-xl transition-all uppercase tracking-widest disabled:opacity-50">存入石碑</button>
+                        <button id="saveBtn" class="flex-1 bg-stone-900 text-white text-[10px] font-black py-5 rounded-2xl hover:shadow-xl transition-all uppercase tracking-widest disabled:opacity-50">确认刻入</button>
                         <button id="cancelBtn" class="px-8 bg-stone-50 text-stone-400 rounded-2xl text-[10px] font-black uppercase">放弃</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 灵感祭坛（碰撞结果） -->
+        <!-- 灵感碰撞机 -->
         <div id="jarPanel" class="hidden fixed inset-0 z-[150] bg-amber-950/20 backdrop-blur-xl flex items-center justify-center p-4">
             <div class="bg-white w-full max-w-2xl rounded-[3rem] p-12 shadow-2xl relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-200 via-orange-400 to-amber-200"></div>
                 <div class="flex justify-between items-start mb-10">
-                    <h3 class="serif text-2xl font-bold text-stone-800">灵感碰撞机</h3>
+                    <h3 class="serif text-2xl font-bold text-stone-800">随机灵感碰撞</h3>
                     <button id="closeJar" class="text-stone-300 hover:text-stone-900"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div id="jarContent" class="space-y-8">
-                    <!-- 碰撞结果注入 -->
-                </div>
-                <button id="reShake" class="mt-12 w-full py-5 border-2 border-amber-100 rounded-2xl text-amber-600 text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 transition-all">再次摇晃</button>
+                <div id="jarContent" class="space-y-8"></div>
+                <button id="reShake" class="mt-12 w-full py-5 border-2 border-amber-100 rounded-2xl text-amber-600 text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 transition-all">再次摇晃瓶子</button>
             </div>
         </div>
 
-        <!-- 瀑布流 -->
-        <div id="monolithFlow" class="masonry-grid mt-16">
-            <!-- 列表渲染 -->
-        </div>
+        <!-- 瀑布流展示区 -->
+        <div id="monolithFlow" class="masonry-grid mt-16"></div>
     </div>
 
-    <!-- 配置模态 -->
+    <!-- 配置中心 -->
     <div id="configModal" class="fixed inset-0 z-[200] hidden bg-stone-900/60 flex items-center justify-center">
         <div class="bg-white p-10 rounded-[2.5rem] w-full max-w-xs shadow-2xl">
-            <h3 class="text-[10px] font-black mb-6 uppercase tracking-widest text-stone-900">系统设置</h3>
-            <input type="password" id="apiKeyInput" placeholder="Gemini API Key" class="w-full bg-stone-50 border border-stone-100 rounded-2xl py-4 px-6 text-xs mb-6 outline-none focus:bg-white">
-            <button id="saveConfig" class="w-full bg-stone-900 text-white py-4 rounded-2xl text-[10px] font-bold uppercase shadow-lg">确认保存</button>
+            <h3 class="text-[10px] font-black mb-6 uppercase tracking-widest text-stone-900">GEMINI 设置</h3>
+            <input type="password" id="apiKeyInput" placeholder="请输入你的 API Key" class="w-full bg-stone-50 border border-stone-100 rounded-2xl py-4 px-6 text-xs mb-6 outline-none focus:bg-white transition-all">
+            <button id="saveConfig" class="w-full bg-stone-900 text-white py-4 rounded-2xl text-[10px] font-bold uppercase shadow-lg hover:bg-stone-800">确认</button>
         </div>
     </div>
 
@@ -143,15 +139,15 @@
         let allFragments = [];
 
         window.addEventListener('auth-ready', () => {
-            setupInteraction();
-            listenToStones();
+            setupUI();
+            startSync();
         });
 
-        function setupInteraction() {
+        function setupUI() {
             const dropZone = document.getElementById('dropZone');
             const fileInput = document.getElementById('fileInput');
 
-            // 配置管理
+            // 设置
             document.getElementById('configBtn').onclick = () => {
                 document.getElementById('configModal').classList.remove('hidden');
                 document.getElementById('apiKeyInput').value = localStorage.getItem('GEMINI_API_KEY') || "";
@@ -161,7 +157,7 @@
                 document.getElementById('configModal').classList.add('hidden');
             };
 
-            // 拖拽上传逻辑
+            // 拖拽
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, (ev) => {
                 ev.preventDefault();
                 ev.stopPropagation();
@@ -169,7 +165,28 @@
 
             dropZone.addEventListener('dragover', () => dropZone.classList.add('drop-zone-active'));
             dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone-active'));
-            dropZone.addEventListener('drop', handleDrop);
+            dropZone.addEventListener('drop', (e) => {
+                dropZone.classList.remove('drop-zone-active');
+                const html = e.dataTransfer.getData('text/html');
+                const text = e.dataTransfer.getData('text/plain');
+                let imgUrl = "";
+
+                if (html) {
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    const img = doc.querySelector('img');
+                    if (img) imgUrl = img.src;
+                }
+                if (!imgUrl && text && text.startsWith('http')) imgUrl = text;
+
+                if (imgUrl) {
+                    processInput(imgUrl, 'url');
+                } else if (e.dataTransfer.files.length > 0) {
+                    const file = e.dataTransfer.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (re) => processInput(re.target.result, 'local');
+                    reader.readAsDataURL(file);
+                }
+            });
             
             dropZone.onclick = () => fileInput.click();
             fileInput.onchange = (e) => {
@@ -182,35 +199,12 @@
             };
 
             document.getElementById('cancelBtn').onclick = () => document.getElementById('previewPanel').classList.add('hidden');
-            document.getElementById('saveBtn').onclick = saveToMonolith;
+            document.getElementById('saveBtn').onclick = saveEntry;
             
-            // 漂流瓶逻辑
-            document.getElementById('shakeJar').onclick = openJar;
+            // 碰撞机
+            document.getElementById('shakeJar').onclick = triggerJar;
             document.getElementById('closeJar').onclick = () => document.getElementById('jarPanel').classList.add('hidden');
-            document.getElementById('reShake').onclick = openJar;
-        }
-
-        async function handleDrop(e) {
-            document.getElementById('dropZone').classList.remove('drop-zone-active');
-            const html = e.dataTransfer.getData('text/html');
-            const text = e.dataTransfer.getData('text/plain');
-            let imgUrl = "";
-
-            if (html) {
-                const doc = new DOMParser().parseFromString(html, 'text/html');
-                const img = doc.querySelector('img');
-                if (img) imgUrl = img.src;
-            }
-            if (!imgUrl && text && text.startsWith('http')) imgUrl = text;
-
-            if (imgUrl) {
-                processInput(imgUrl, 'url');
-            } else if (e.dataTransfer.files.length > 0) {
-                const file = e.dataTransfer.files[0];
-                const reader = new FileReader();
-                reader.onload = (re) => processInput(re.target.result, 'local');
-                reader.readAsDataURL(file);
-            }
+            document.getElementById('reShake').onclick = triggerJar;
         }
 
         async function processInput(src, type) {
@@ -220,15 +214,15 @@
             document.getElementById('aiContent').innerHTML = "";
             document.getElementById('saveBtn').disabled = true;
             
-            await runAI(src, type);
+            await runAIAnalysis(src, type);
         }
 
-        async function runAI(src, type) {
+        async function runAIAnalysis(src, type) {
             const key = localStorage.getItem('GEMINI_API_KEY');
-            if (!key) return alert("请设置 API Key");
+            if (!key) return alert("请在右上角设置中填入你的 Gemini API Key");
 
             const loader = document.getElementById('loadingOverlay');
-            const content = document.getElementById('aiContent');
+            const container = document.getElementById('aiContent');
             loader.classList.remove('hidden');
 
             try {
@@ -236,6 +230,7 @@
                 if (type === 'local') {
                     base64 = src.split(',')[1];
                 } else {
+                    // 处理外链跨域抓取
                     const resp = await fetch(src);
                     const blob = await resp.blob();
                     base64 = await new Promise(r => {
@@ -245,7 +240,7 @@
                     });
                 }
 
-                const prompt = `分析图中的视觉属性。必须返回JSON：{"tone":"视觉调性","meta":"构图隐喻","mood":"情绪","colors":["#HEX"],"tags":["标签"]}`;
+                const prompt = `作为一个电影美学家，请分析这张图并返回JSON（不要Markdown）：{"tone":"视觉调性（一行）","meta":"构图隐喻（一行）","mood":"核心情绪","colors":["#HEX"],"tags":["标签1","标签2","标签3"]}`;
                 const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -258,77 +253,74 @@
                 const resJson = await apiRes.json();
                 currentFragment.analysis = JSON.parse(resJson.candidates[0].content.parts[0].text);
                 
-                renderAIResult(content, currentFragment.analysis);
+                container.innerHTML = `
+                    <div class="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+                        <div class="flex items-center gap-2">
+                            ${currentFragment.analysis.colors.map(c => `<div class="w-8 h-8 rounded-lg shadow-inner" style="background:${c}"></div>`).join('')}
+                            <span class="text-[8px] font-black text-stone-300 uppercase ml-2 tracking-widest">Main Palette</span>
+                        </div>
+                        <div>
+                            <p class="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1">视觉调性</p>
+                            <p class="text-lg serif text-stone-800 leading-snug">${currentFragment.analysis.tone}</p>
+                        </div>
+                        <div>
+                            <p class="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1">构图隐喻</p>
+                            <p class="text-sm serif text-stone-600 italic leading-relaxed">${currentFragment.analysis.meta}</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2 pt-4 border-t border-stone-50">
+                            ${currentFragment.analysis.tags.map(t => `<span class="bg-stone-100 text-stone-500 text-[9px] px-4 py-1.5 rounded-full font-black uppercase">#${t}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
                 document.getElementById('saveBtn').disabled = false;
             } catch (e) {
-                content.innerHTML = `<p class="text-red-400 text-xs italic">解析失败：该链接可能受跨域限制。建议复制图片地址后再粘贴。</p>`;
+                container.innerHTML = `<p class="text-red-400 text-xs italic font-bold">【提示】直接拖拽受部分网站保护，请尝试：右键点击图片 -> 复制图片 -> 在此页面 Ctrl+V 粘贴（或复制图片地址后再试）。</p>`;
             } finally {
                 loader.classList.add('hidden');
             }
         }
 
-        function renderAIResult(container, data) {
-            container.innerHTML = `
-                <div class="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                    <div class="flex items-center gap-2">
-                        ${data.colors.map(c => `<div class="w-8 h-8 rounded-lg shadow-inner" style="background:${c}"></div>`).join('')}
-                        <span class="text-[8px] font-black text-stone-300 uppercase ml-2">Main Palette</span>
-                    </div>
-                    <div>
-                        <p class="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1">视觉调性</p>
-                        <p class="text-lg serif text-stone-800 leading-snug">${data.tone}</p>
-                    </div>
-                    <div>
-                        <p class="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1">构图隐喻</p>
-                        <p class="text-sm serif text-stone-600 italic leading-relaxed">${data.meta}</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2 pt-4 border-t border-stone-50">
-                        ${data.tags.map(t => `<span class="bg-stone-100 text-stone-500 text-[9px] px-4 py-1.5 rounded-full font-black uppercase">#${t}</span>`).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        async function saveToMonolith() {
+        async function saveEntry() {
+            if (!currentFragment.analysis || !window.currentUser) return;
             const { db, storage, appId, ref, uploadString, getDownloadURL, collection, addDoc } = window.fb;
             const btn = document.getElementById('saveBtn');
-            btn.innerText = "写入石碑...";
+            btn.innerText = "正在刻入云端...";
             btn.disabled = true;
 
             try {
                 let finalUrl = currentFragment.src;
                 if (currentFragment.type === 'local') {
-                    const sPath = `artifacts/${appId}/v7/${Date.now()}.jpg`;
+                    const sPath = `artifacts/${appId}/v7_stable/${Date.now()}.jpg`;
                     const sRef = ref(storage, sPath);
                     await uploadString(sRef, currentFragment.src, 'data_url');
                     finalUrl = await getDownloadURL(sRef);
                 }
 
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'stones_v7'), {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'stones_v7_stable'), {
                     url: finalUrl,
                     analysis: currentFragment.analysis,
-                    type: currentFragment.type,
                     createdAt: Date.now(),
                     creator: window.currentUser.uid
                 });
 
                 document.getElementById('previewPanel').classList.add('hidden');
             } catch (e) {
-                alert("保存失败: " + e.message);
+                alert("云端保存失败: " + e.message);
             } finally {
-                btn.innerText = "存入石碑";
+                btn.innerText = "确认刻入";
                 btn.disabled = false;
             }
         }
 
-        function listenToStones() {
+        function startSync() {
             const { db, appId, collection, onSnapshot } = window.fb;
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'stones_v7'), (snap) => {
+            // 使用全新的稳定版集合名称 stones_v7_stable
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'stones_v7_stable'), (snap) => {
                 const flow = document.getElementById('monolithFlow');
-                allFragments = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.createdAt - a.createdAt);
+                allFragments = snap.docs.map(d => d.data()).sort((a,b) => b.createdAt - a.createdAt);
                 
                 if (allFragments.length === 0) {
-                    flow.innerHTML = `<div class="col-span-full py-40 text-center text-stone-300 text-xs font-black uppercase tracking-[0.5em]">石碑静默中</div>`;
+                    flow.innerHTML = `<div class="col-span-full py-40 text-center text-stone-300 text-xs font-black uppercase tracking-[0.5em]">石碑静默，等待灵感</div>`;
                     return;
                 }
 
@@ -337,13 +329,13 @@
                         <div class="relative overflow-hidden aspect-[3/4] bg-stone-100 rounded-t-[2rem]">
                             <img src="${item.url}" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" loading="lazy">
                             <div class="absolute bottom-4 left-4 flex gap-1">
-                                ${item.analysis.colors.map(c => `<div class="w-2 h-2 rounded-full border border-white/20" style="background:${c}"></div>`).join('')}
+                                ${item.analysis.colors.map(c => `<div class="w-2 h-2 rounded-full border border-white/20 shadow-sm" style="background:${c}"></div>`).join('')}
                             </div>
                         </div>
                         <div class="p-8 space-y-4">
-                            <p class="text-xs text-stone-800 serif leading-relaxed">${item.analysis.tone}</p>
+                            <p class="text-xs text-stone-800 serif leading-relaxed line-clamp-3">${item.analysis.tone}</p>
                             <div class="flex flex-wrap gap-2">
-                                ${item.analysis.tags.slice(0,2).map(t => `<span class="text-[8px] font-black text-stone-300 uppercase">#${t}</span>`).join('')}
+                                ${item.analysis.tags.slice(0,2).map(t => `<span class="text-[8px] font-black text-stone-300 uppercase tracking-widest">#${t}</span>`).join('')}
                             </div>
                         </div>
                     </div>
@@ -351,33 +343,32 @@
             });
         }
 
-        function openJar() {
+        function triggerJar() {
             if (allFragments.length < 2) return alert("石碑上的碎片太少了，至少需要 2 片进行碰撞。");
             
             const panel = document.getElementById('jarPanel');
             const content = document.getElementById('jarContent');
             panel.classList.remove('hidden');
 
-            // 随机抽取两个
             const shuffled = [...allFragments].sort(() => 0.5 - Math.random());
             const a = shuffled[0];
             const b = shuffled[1];
 
             content.innerHTML = `
-                <div class="grid grid-cols-2 gap-8 mb-10">
-                    <div class="aspect-square rounded-2xl overflow-hidden shadow-lg ring-4 ring-white">
+                <div class="grid grid-cols-2 gap-6 mb-10">
+                    <div class="aspect-square rounded-2xl overflow-hidden shadow-lg ring-8 ring-stone-50">
                         <img src="${a.url}" class="w-full h-full object-cover">
                     </div>
-                    <div class="aspect-square rounded-2xl overflow-hidden shadow-lg ring-4 ring-white">
+                    <div class="aspect-square rounded-2xl overflow-hidden shadow-lg ring-8 ring-stone-50">
                         <img src="${b.url}" class="w-full h-full object-cover">
                     </div>
                 </div>
-                <div class="space-y-6 text-center">
+                <div class="space-y-6 text-center animate-in zoom-in duration-500">
                     <p class="text-[8px] font-black uppercase text-amber-400 tracking-[0.4em]">碰撞命题</p>
-                    <h2 class="serif text-3xl text-stone-800 leading-tight">
-                        尝试融合 <span class="italic text-amber-600">“${a.analysis.mood}”</span> 的灵魂，<br>与 <span class="italic text-amber-600">“${b.analysis.tone}”</span> 的外壳。
+                    <h2 class="serif text-2xl text-stone-800 leading-tight">
+                        尝试融合 <span class="italic text-amber-600">“${a.analysis.mood}”</span> 的情绪，<br>嵌入 <span class="italic text-amber-600">“${b.analysis.tone}”</span> 的视觉逻辑。
                     </h2>
-                    <p class="text-xs text-stone-400 serif italic mt-4">“隐喻参考：${a.analysis.meta}”</p>
+                    <p class="text-[10px] text-stone-400 serif italic mt-4 opacity-70">关键词：${a.analysis.tags[0]} × ${b.analysis.tags[0]}</p>
                 </div>
             `;
         }
