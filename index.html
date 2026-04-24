@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>灵感石碑 - Stone Edition Pro v4.0 (Cloud Storage)</title>
+    <title>灵感石碑 - 究极形态 v7.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Firebase SDK -->
@@ -13,37 +13,26 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-storage.js";
 
-        // Firebase 初始化
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
         const storage = getStorage(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'inspiration-stone-v4';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'inspiration-stone-v7';
 
-        // 挂载核心对象到全局以便跨作用域使用
         window.fb = { db, auth, storage, appId, collection, addDoc, onSnapshot, query, orderBy, ref, uploadString, getDownloadURL };
-        window.currentUser = null;
-
-        // 严格遵循 RULE 3: 先登录，后操作
+        
         const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Auth Error:", error);
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
             }
         };
 
-        // 监听登录状态
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 window.currentUser = user;
-                console.log("Authenticated as:", user.uid);
-                // 登录成功后再启动监听逻辑
                 window.dispatchEvent(new CustomEvent('auth-ready'));
             }
         });
@@ -51,255 +40,346 @@
         initAuth();
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;500&family=Noto+Sans+SC:wght@300;400&display=swap');
-        body { background-color: #f8f8f7; color: #44443c; font-family: 'Noto Sans SC', sans-serif; }
-        .serif-title { font-family: 'Noto Serif SC', serif; }
-        .stone-card { background: white; border: 1px solid #eee; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .stone-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
-        .loading-shimmer { background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;600&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+        body { background-color: #f8f8f6; color: #333; font-family: 'Noto Sans SC', sans-serif; overflow-x: hidden; }
+        .serif { font-family: 'Noto Serif SC', serif; }
+        .masonry-grid { column-count: 1; column-gap: 1.5rem; }
+        @media (min-width: 768px) { .masonry-grid { column-count: 2; } }
+        @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
+        .stone-card { break-inside: avoid; margin-bottom: 1.5rem; background: white; border-radius: 2rem; border: 1px solid #eee; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .stone-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
+        .drop-zone-active { border-color: #000; background: #fff; transform: scale(1.01); }
+        .color-dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .jar-btn { animation: float 3s ease-in-out infinite; }
     </style>
 </head>
-<body class="pb-20">
+<body class="pb-32 px-4">
 
-    <div class="max-w-2xl mx-auto px-6 pt-16">
-        <header class="mb-12 flex justify-between items-start">
+    <div class="max-w-6xl mx-auto pt-12">
+        <header class="mb-12 flex justify-between items-end">
             <div>
-                <h1 class="text-4xl font-light text-stone-900 serif-title tracking-tight">灵感云石碑</h1>
-                <p class="text-[10px] text-stone-400 mt-2 tracking-[0.3em] uppercase font-bold">Cloud Sync / Multi-Device support</p>
+                <h1 class="text-4xl font-light text-stone-900 serif tracking-tighter">灵感石碑</h1>
+                <p class="text-[9px] text-stone-400 mt-2 uppercase tracking-[0.5em] font-bold">Inspiration Monolith / v7.0 Full Stack</p>
             </div>
-            <div class="flex gap-3">
-                <button id="keyBtn" class="p-3 rounded-2xl bg-white border border-stone-100 text-stone-400 hover:text-stone-900 shadow-sm transition-all">
-                    <i class="fa-solid fa-key text-xs"></i>
+            <div class="flex gap-4">
+                <button id="shakeJar" class="jar-btn w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center hover:bg-amber-200 transition-colors shadow-sm" title="灵感随机碰撞">
+                    <i class="fa-solid fa-jar"></i>
+                </button>
+                <button id="configBtn" class="w-12 h-12 bg-white text-stone-300 rounded-2xl flex items-center justify-center hover:text-stone-900 transition-all border border-stone-100 shadow-sm">
+                    <i class="fa-solid fa-gear"></i>
                 </button>
             </div>
         </header>
 
-        <!-- 云端状态栏 -->
-        <div class="mb-8 p-4 bg-stone-900 rounded-3xl text-white flex items-center justify-between shadow-xl">
-            <div class="flex items-center gap-3">
-                <div id="statusDot" class="w-2 h-2 bg-stone-500 rounded-full"></div>
-                <span id="statusText" class="text-[10px] font-bold uppercase tracking-widest">正在连接云端...</span>
+        <!-- 采集入口 -->
+        <div id="dropZone" class="group relative border-2 border-dashed border-stone-200 bg-white/50 rounded-[2.5rem] p-16 text-center transition-all cursor-pointer hover:bg-white hover:border-stone-400">
+            <input type="file" id="fileInput" class="hidden">
+            <div class="pointer-events-none space-y-4">
+                <div class="w-16 h-16 bg-stone-100 rounded-3xl mx-auto flex items-center justify-center group-hover:rotate-12 transition-transform">
+                    <i class="fa-solid fa-wand-magic-sparkles text-stone-400"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-black uppercase tracking-widest text-stone-600">在此拖入或粘贴外部图片</p>
+                    <p class="text-[10px] text-stone-300 mt-1 uppercase tracking-widest">Pinterest / X / Local Files</p>
+                </div>
             </div>
-            <button id="driftBtn" class="text-[10px] bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition-all">捞取灵感碎片</button>
         </div>
 
-        <!-- 上传区域 -->
-        <div class="mb-12">
-            <div id="dropZone" class="relative border-2 border-stone-200 border-dashed bg-white rounded-[2.5rem] p-12 text-center hover:border-stone-400 transition-all cursor-pointer group shadow-sm">
-                <input type="file" id="fileInput" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10">
-                <div class="space-y-3 pointer-events-none">
-                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-stone-300 group-hover:text-stone-600 transition-colors"></i>
-                    <p class="text-[10px] text-stone-400 uppercase font-black tracking-widest">点击或拖拽上传高画质素材</p>
-                </div>
-            </div>
-
-            <!-- 分析与预览 -->
-            <div id="previewContainer" class="hidden mt-8 space-y-4">
-                <div class="rounded-[2rem] overflow-hidden shadow-2xl">
-                    <img id="previewImg" src="" class="w-full h-auto">
-                </div>
-                <div class="bg-white rounded-[2rem] p-8 border border-stone-100">
-                    <div id="loadingIndicator" class="hidden py-4 text-center">
-                        <i class="fa-solid fa-circle-notch animate-spin text-stone-900 mb-2"></i>
-                        <p class="text-[9px] font-bold text-stone-400 uppercase tracking-[0.2em]">正在跨维度分析并同步云端</p>
+        <!-- 预览与分析面板 -->
+        <div id="previewPanel" class="hidden fixed inset-0 z-[100] bg-stone-900/40 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-5xl rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row h-[85vh]">
+                <div class="w-full md:w-1/2 bg-stone-100 relative">
+                    <img id="previewImg" class="w-full h-full object-contain">
+                    <div id="loadingOverlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center hidden">
+                        <div class="w-8 h-8 border-4 border-stone-900 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-stone-500">正在剥离视觉维度...</p>
                     </div>
-                    <div id="analysisOutput" class="text-sm text-stone-600 leading-relaxed"></div>
-                    <div class="mt-6 flex gap-3">
-                        <button id="uploadBtn" class="flex-1 bg-stone-900 text-white text-[10px] font-bold py-4 rounded-2xl hover:shadow-lg transition-all uppercase tracking-widest">同步至云端石碑</button>
-                        <button id="cancelBtn" class="px-6 bg-stone-100 text-stone-400 rounded-2xl hover:bg-stone-200 transition-all text-xs">取消</button>
+                </div>
+                <div class="w-full md:w-1/2 p-10 flex flex-col justify-between overflow-y-auto">
+                    <div id="aiContent" class="space-y-8">
+                        <!-- AI 结果注入 -->
+                    </div>
+                    <div class="flex gap-4 mt-8">
+                        <button id="saveBtn" class="flex-1 bg-stone-900 text-white text-[10px] font-black py-5 rounded-2xl hover:shadow-xl transition-all uppercase tracking-widest disabled:opacity-50">存入石碑</button>
+                        <button id="cancelBtn" class="px-8 bg-stone-50 text-stone-400 rounded-2xl text-[10px] font-black uppercase">放弃</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 瀑布流列表 -->
-        <div id="cloudList" class="grid grid-cols-1 gap-8">
-            <div class="loading-shimmer h-64 rounded-[2.5rem]"></div>
-            <div class="loading-shimmer h-64 rounded-[2.5rem]"></div>
+        <!-- 灵感祭坛（碰撞结果） -->
+        <div id="jarPanel" class="hidden fixed inset-0 z-[150] bg-amber-950/20 backdrop-blur-xl flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-2xl rounded-[3rem] p-12 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-200 via-orange-400 to-amber-200"></div>
+                <div class="flex justify-between items-start mb-10">
+                    <h3 class="serif text-2xl font-bold text-stone-800">灵感碰撞机</h3>
+                    <button id="closeJar" class="text-stone-300 hover:text-stone-900"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="jarContent" class="space-y-8">
+                    <!-- 碰撞结果注入 -->
+                </div>
+                <button id="reShake" class="mt-12 w-full py-5 border-2 border-amber-100 rounded-2xl text-amber-600 text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 transition-all">再次摇晃</button>
+            </div>
+        </div>
+
+        <!-- 瀑布流 -->
+        <div id="monolithFlow" class="masonry-grid mt-16">
+            <!-- 列表渲染 -->
         </div>
     </div>
 
-    <!-- 配置模态框 -->
-    <div id="configModal" class="fixed inset-0 z-[500] hidden bg-stone-900/40 backdrop-blur-md flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-xs rounded-[2.5rem] p-10 shadow-2xl">
-            <h3 class="text-[10px] font-bold text-stone-900 mb-6 uppercase tracking-widest">Gemini API 配置</h3>
-            <input type="password" id="apiKeyInput" placeholder="输入 API Key" class="w-full bg-stone-50 border border-stone-200 rounded-xl py-4 px-5 text-xs mb-6 outline-none focus:border-stone-900">
-            <button id="saveConfigBtn" class="w-full bg-stone-900 text-white py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest">保存</button>
+    <!-- 配置模态 -->
+    <div id="configModal" class="fixed inset-0 z-[200] hidden bg-stone-900/60 flex items-center justify-center">
+        <div class="bg-white p-10 rounded-[2.5rem] w-full max-w-xs shadow-2xl">
+            <h3 class="text-[10px] font-black mb-6 uppercase tracking-widest text-stone-900">系统设置</h3>
+            <input type="password" id="apiKeyInput" placeholder="Gemini API Key" class="w-full bg-stone-50 border border-stone-100 rounded-2xl py-4 px-6 text-xs mb-6 outline-none focus:bg-white">
+            <button id="saveConfig" class="w-full bg-stone-900 text-white py-4 rounded-2xl text-[10px] font-bold uppercase shadow-lg">确认保存</button>
         </div>
     </div>
 
     <script type="module">
-        let currentFileData = null;
-        let currentAnalysis = null;
+        let currentFragment = { src: '', type: 'url', analysis: null };
+        let allFragments = [];
 
-        // 等待 Auth 完成后再启动业务逻辑
         window.addEventListener('auth-ready', () => {
-            updateStatusUI(true);
-            initApp();
-            listenToCloud();
+            setupInteraction();
+            listenToStones();
         });
 
-        function updateStatusUI(connected) {
-            const dot = document.getElementById('statusDot');
-            const text = document.getElementById('statusText');
-            if (connected) {
-                dot.classList.replace('bg-stone-500', 'bg-emerald-400');
-                dot.classList.add('animate-pulse');
-                text.innerText = "云端同步已开启";
-            }
-        }
-
-        function initApp() {
+        function setupInteraction() {
+            const dropZone = document.getElementById('dropZone');
             const fileInput = document.getElementById('fileInput');
-            fileInput.onchange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    currentFileData = ev.target.result;
-                    document.getElementById('previewImg').src = currentFileData;
-                    document.getElementById('previewContainer').classList.remove('hidden');
-                    runAnalysis(currentFileData);
-                };
-                reader.readAsDataURL(file);
-            };
 
-            document.getElementById('keyBtn').onclick = () => {
+            // 配置管理
+            document.getElementById('configBtn').onclick = () => {
                 document.getElementById('configModal').classList.remove('hidden');
                 document.getElementById('apiKeyInput').value = localStorage.getItem('GEMINI_API_KEY') || "";
             };
-
-            document.getElementById('saveConfigBtn').onclick = () => {
+            document.getElementById('saveConfig').onclick = () => {
                 localStorage.setItem('GEMINI_API_KEY', document.getElementById('apiKeyInput').value.trim());
                 document.getElementById('configModal').classList.add('hidden');
             };
 
-            document.getElementById('uploadBtn').onclick = uploadToCloud;
-            document.getElementById('cancelBtn').onclick = () => {
-                document.getElementById('previewContainer').classList.add('hidden');
-                currentFileData = null;
-                currentAnalysis = null;
+            // 拖拽上传逻辑
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+            }));
+
+            dropZone.addEventListener('dragover', () => dropZone.classList.add('drop-zone-active'));
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone-active'));
+            dropZone.addEventListener('drop', handleDrop);
+            
+            dropZone.onclick = () => fileInput.click();
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (re) => processInput(re.target.result, 'local');
+                    reader.readAsDataURL(file);
+                }
             };
+
+            document.getElementById('cancelBtn').onclick = () => document.getElementById('previewPanel').classList.add('hidden');
+            document.getElementById('saveBtn').onclick = saveToMonolith;
+            
+            // 漂流瓶逻辑
+            document.getElementById('shakeJar').onclick = openJar;
+            document.getElementById('closeJar').onclick = () => document.getElementById('jarPanel').classList.add('hidden');
+            document.getElementById('reShake').onclick = openJar;
         }
 
-        async function runAnalysis(base64) {
-            const key = localStorage.getItem('GEMINI_API_KEY');
-            if (!key) return alert("请点击右上角配置 API Key");
+        async function handleDrop(e) {
+            document.getElementById('dropZone').classList.remove('drop-zone-active');
+            const html = e.dataTransfer.getData('text/html');
+            const text = e.dataTransfer.getData('text/plain');
+            let imgUrl = "";
 
-            const output = document.getElementById('analysisOutput');
-            const loader = document.getElementById('loadingIndicator');
+            if (html) {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const img = doc.querySelector('img');
+                if (img) imgUrl = img.src;
+            }
+            if (!imgUrl && text && text.startsWith('http')) imgUrl = text;
+
+            if (imgUrl) {
+                processInput(imgUrl, 'url');
+            } else if (e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                const reader = new FileReader();
+                reader.onload = (re) => processInput(re.target.result, 'local');
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function processInput(src, type) {
+            currentFragment = { src, type, analysis: null };
+            document.getElementById('previewImg').src = src;
+            document.getElementById('previewPanel').classList.remove('hidden');
+            document.getElementById('aiContent').innerHTML = "";
+            document.getElementById('saveBtn').disabled = true;
+            
+            await runAI(src, type);
+        }
+
+        async function runAI(src, type) {
+            const key = localStorage.getItem('GEMINI_API_KEY');
+            if (!key) return alert("请设置 API Key");
+
+            const loader = document.getElementById('loadingOverlay');
+            const content = document.getElementById('aiContent');
             loader.classList.remove('hidden');
-            output.innerHTML = "";
 
             try {
-                const prompt = `你是一位极简主义艺术评论家。请分析图中的视觉情感，返回JSON：{"tags":["标签"],"desc":"一句话深刻描述"}`;
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {
+                let base64 = "";
+                if (type === 'local') {
+                    base64 = src.split(',')[1];
+                } else {
+                    const resp = await fetch(src);
+                    const blob = await resp.blob();
+                    base64 = await new Promise(r => {
+                        const rd = new FileReader();
+                        rd.onloadend = () => r(rd.result.split(',')[1]);
+                        rd.readAsDataURL(blob);
+                    });
+                }
+
+                const prompt = `分析图中的视觉属性。必须返回JSON：{"tone":"视觉调性","meta":"构图隐喻","mood":"情绪","colors":["#HEX"],"tags":["标签"]}`;
+                const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: "image/png", data: base64.split(',')[1] } }] }],
+                        contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64 } }] }],
                         generationConfig: { responseMimeType: "application/json" }
                     })
                 });
+
+                const resJson = await apiRes.json();
+                currentFragment.analysis = JSON.parse(resJson.candidates[0].content.parts[0].text);
                 
-                const res = await resp.json();
-                if (res.error) throw new Error(res.error.message);
-                
-                currentAnalysis = JSON.parse(res.candidates[0].content.parts[0].text);
-                output.innerHTML = `
-                    <div class="flex flex-wrap gap-2 mb-3">
-                        ${currentAnalysis.tags.map(t => `<span class="bg-stone-100 px-3 py-1 rounded-full text-[10px] font-bold text-stone-500">#${t}</span>`).join('')}
-                    </div>
-                    <p class="serif-title italic text-stone-800">“${currentAnalysis.desc}”</p>
-                `;
+                renderAIResult(content, currentFragment.analysis);
+                document.getElementById('saveBtn').disabled = false;
             } catch (e) {
-                output.innerHTML = `<p class="text-red-400 text-[10px]">分析失败：${e.message}</p>`;
+                content.innerHTML = `<p class="text-red-400 text-xs italic">解析失败：该链接可能受跨域限制。建议复制图片地址后再粘贴。</p>`;
             } finally {
                 loader.classList.add('hidden');
             }
         }
 
-        async function uploadToCloud() {
-            if (!currentFileData || !currentAnalysis || !window.currentUser) {
-                alert("未完成分析或登录状态丢失，请稍后");
-                return;
-            }
-            
-            const btn = document.getElementById('uploadBtn');
-            const originalText = btn.innerText;
-            btn.innerText = "同步中...";
+        function renderAIResult(container, data) {
+            container.innerHTML = `
+                <div class="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                    <div class="flex items-center gap-2">
+                        ${data.colors.map(c => `<div class="w-8 h-8 rounded-lg shadow-inner" style="background:${c}"></div>`).join('')}
+                        <span class="text-[8px] font-black text-stone-300 uppercase ml-2">Main Palette</span>
+                    </div>
+                    <div>
+                        <p class="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1">视觉调性</p>
+                        <p class="text-lg serif text-stone-800 leading-snug">${data.tone}</p>
+                    </div>
+                    <div>
+                        <p class="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1">构图隐喻</p>
+                        <p class="text-sm serif text-stone-600 italic leading-relaxed">${data.meta}</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 pt-4 border-t border-stone-50">
+                        ${data.tags.map(t => `<span class="bg-stone-100 text-stone-500 text-[9px] px-4 py-1.5 rounded-full font-black uppercase">#${t}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function saveToMonolith() {
+            const { db, storage, appId, ref, uploadString, getDownloadURL, collection, addDoc } = window.fb;
+            const btn = document.getElementById('saveBtn');
+            btn.innerText = "写入石碑...";
             btn.disabled = true;
 
             try {
-                const { storage, db, appId, ref, uploadString, getDownloadURL, collection, addDoc } = window.fb;
-                
-                // 1. 上传图片文件 (Storage)
-                const storagePath = `artifacts/${appId}/images/${Date.now()}.png`;
-                const storageRef = ref(storage, storagePath);
-                await uploadString(storageRef, currentFileData, 'data_url');
-                const downloadURL = await getDownloadURL(storageRef);
+                let finalUrl = currentFragment.src;
+                if (currentFragment.type === 'local') {
+                    const sPath = `artifacts/${appId}/v7/${Date.now()}.jpg`;
+                    const sRef = ref(storage, sPath);
+                    await uploadString(sRef, currentFragment.src, 'data_url');
+                    finalUrl = await getDownloadURL(sRef);
+                }
 
-                // 2. 存入元数据 (Firestore)
-                const dataCol = collection(db, 'artifacts', appId, 'public', 'data', 'inspo_stones');
-                await addDoc(dataCol, {
-                    imageUrl: downloadURL,
-                    tags: currentAnalysis.tags,
-                    description: currentAnalysis.desc,
-                    creator: window.currentUser.uid,
-                    createdAt: Date.now()
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'stones_v7'), {
+                    url: finalUrl,
+                    analysis: currentFragment.analysis,
+                    type: currentFragment.type,
+                    createdAt: Date.now(),
+                    creator: window.currentUser.uid
                 });
 
-                document.getElementById('previewContainer').classList.add('hidden');
-                currentFileData = null;
-                currentAnalysis = null;
+                document.getElementById('previewPanel').classList.add('hidden');
             } catch (e) {
-                console.error("Upload Error:", e);
-                alert("云端同步失败: " + e.message);
+                alert("保存失败: " + e.message);
             } finally {
-                btn.innerText = originalText;
+                btn.innerText = "存入石碑";
                 btn.disabled = false;
             }
         }
 
-        function listenToCloud() {
-            if (!window.currentUser) return;
-
+        function listenToStones() {
             const { db, appId, collection, onSnapshot } = window.fb;
-            const dataCol = collection(db, 'artifacts', appId, 'public', 'data', 'inspo_stones');
-            
-            // 实时监听
-            onSnapshot(dataCol, (snapshot) => {
-                const list = document.getElementById('cloudList');
-                if (snapshot.empty) {
-                    list.innerHTML = `<div class="py-20 text-center text-stone-300 text-xs uppercase tracking-widest font-bold">尚无云端印记</div>`;
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'stones_v7'), (snap) => {
+                const flow = document.getElementById('monolithFlow');
+                allFragments = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.createdAt - a.createdAt);
+                
+                if (allFragments.length === 0) {
+                    flow.innerHTML = `<div class="col-span-full py-40 text-center text-stone-300 text-xs font-black uppercase tracking-[0.5em]">石碑静默中</div>`;
                     return;
                 }
 
-                // 规则 2: 内存中排序
-                const docs = snapshot.docs.map(d => d.data()).sort((a, b) => b.createdAt - a.createdAt);
-
-                list.innerHTML = docs.map(item => `
-                    <div class="stone-card rounded-[2.5rem] overflow-hidden group">
-                        <div class="relative overflow-hidden aspect-[4/3] bg-stone-100">
-                            <img src="${item.imageUrl}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy">
-                        </div>
-                        <div class="p-8">
-                            <div class="flex flex-wrap gap-2 mb-4">
-                                ${item.tags.map(t => `<span class="text-[9px] font-black uppercase text-stone-400 tracking-tighter">#${t}</span>`).join('')}
+                flow.innerHTML = allFragments.map(item => `
+                    <div class="stone-card group">
+                        <div class="relative overflow-hidden aspect-[3/4] bg-stone-100 rounded-t-[2rem]">
+                            <img src="${item.url}" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" loading="lazy">
+                            <div class="absolute bottom-4 left-4 flex gap-1">
+                                ${item.analysis.colors.map(c => `<div class="w-2 h-2 rounded-full border border-white/20" style="background:${c}"></div>`).join('')}
                             </div>
-                            <p class="text-xs text-stone-600 leading-relaxed serif-title">${item.description}</p>
-                            <div class="mt-6 pt-6 border-t border-stone-50 flex justify-between items-center">
-                                <span class="text-[8px] text-stone-300 font-bold uppercase">Cloud Trace: ${item.creator.slice(0, 8)}</span>
-                                <i class="fa-solid fa-ellipsis text-stone-200"></i>
+                        </div>
+                        <div class="p-8 space-y-4">
+                            <p class="text-xs text-stone-800 serif leading-relaxed">${item.analysis.tone}</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${item.analysis.tags.slice(0,2).map(t => `<span class="text-[8px] font-black text-stone-300 uppercase">#${t}</span>`).join('')}
                             </div>
                         </div>
                     </div>
                 `).join('');
-            }, (err) => {
-                console.error("Cloud Listen Error:", err);
-                document.getElementById('cloudList').innerHTML = `<div class="p-10 text-center text-red-300 text-[10px]">连接权限受阻，请刷新页面</div>`;
             });
+        }
+
+        function openJar() {
+            if (allFragments.length < 2) return alert("石碑上的碎片太少了，至少需要 2 片进行碰撞。");
+            
+            const panel = document.getElementById('jarPanel');
+            const content = document.getElementById('jarContent');
+            panel.classList.remove('hidden');
+
+            // 随机抽取两个
+            const shuffled = [...allFragments].sort(() => 0.5 - Math.random());
+            const a = shuffled[0];
+            const b = shuffled[1];
+
+            content.innerHTML = `
+                <div class="grid grid-cols-2 gap-8 mb-10">
+                    <div class="aspect-square rounded-2xl overflow-hidden shadow-lg ring-4 ring-white">
+                        <img src="${a.url}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="aspect-square rounded-2xl overflow-hidden shadow-lg ring-4 ring-white">
+                        <img src="${b.url}" class="w-full h-full object-cover">
+                    </div>
+                </div>
+                <div class="space-y-6 text-center">
+                    <p class="text-[8px] font-black uppercase text-amber-400 tracking-[0.4em]">碰撞命题</p>
+                    <h2 class="serif text-3xl text-stone-800 leading-tight">
+                        尝试融合 <span class="italic text-amber-600">“${a.analysis.mood}”</span> 的灵魂，<br>与 <span class="italic text-amber-600">“${b.analysis.tone}”</span> 的外壳。
+                    </h2>
+                    <p class="text-xs text-stone-400 serif italic mt-4">“隐喻参考：${a.analysis.meta}”</p>
+                </div>
+            `;
         }
     </script>
 </body>
