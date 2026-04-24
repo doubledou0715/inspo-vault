@@ -34,32 +34,7 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 window.currentUser = user;
-                window.dispatchEvent(new CustomEvent('auth-ready'));
-            }
-        });
-
-        initAuth();
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;600&family=Noto+Sans+SC:wght@300;400;700&display=swap');
-        body { background-color: #f8f8f6; color: #333; font-family: 'Noto Sans SC', sans-serif; overflow-x: hidden; }
-        .serif { font-family: 'Noto Serif SC', serif; }
-        .masonry-grid { column-gap: 1.5rem; display: block; }
-        @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
-        @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
-        .stone-card { break-inside: avoid; margin-bottom: 1.5rem; background: white; border-radius: 2rem; border: 1px solid #eee; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
-        .stone-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
-        .drop-zone-active { border-color: #000 !important; background: #fff !important; transform: scale(1.01); }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .jar-btn { animation: float 3s ease-in-out infinite; }
-    </style>
-</head>
-<body class="pb-32 px-4">
-
-    <div class="max-w-6xl mx-auto pt-12">
-        <header class="mb-12 flex justify-between items-end">
-            <div>
-                <h1 class="text-4xl font-light text-stone-900 serif tracking-tighter">灵感石碑</h1>
+                window.dispatchEvent(new CustomEvent('auth-ready'));                <h1 class="text-4xl font-light text-stone-900 serif tracking-tighter">灵感石碑</h1>
                 <p class="text-[9px] text-stone-400 mt-2 uppercase tracking-[0.5em] font-bold">Inspiration Monolith / v7.0 Stable</p>
             </div>
             <div class="flex gap-4">
